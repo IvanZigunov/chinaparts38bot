@@ -1,28 +1,27 @@
 import telebot
-import os
 from flask import Flask, request
 
-TOKEN = "7557048741:AAGVb-34QQR05wE861WdF4fSivuFahYqa0U"  # заменён на рабочий
+API_TOKEN = '8042972723:AAF0xgS5ln1dyKQyQ2BrVLWpAcjGjBOZUWI'
 
-bot = telebot.TeleBot(TOKEN)
-server = Flask(__name__)
+bot = telebot.TeleBot(API_TOKEN)
+app = Flask(__name__)
 
 @bot.message_handler(commands=['start'])
-def start_message(message):
-    bot.send_message(message.chat.id, "Привет! Я работаю 🤖")
+def handle_start(message):
+    bot.send_message(message.chat.id, "Здравствуйте! Отправьте VIN или артикул, и я подберу автозапчасти.")
 
-@server.route(f"/{TOKEN}", methods=['POST'])
-def getMessage():
+@bot.message_handler(func=lambda message: True)
+def handle_text(message):
+    bot.send_message(message.chat.id, f"Вы ввели: {message.text}. Подбор скоро будет доступен!")
+
+@app.route('/', methods=['POST'])
+def webhook():
     json_string = request.get_data().decode('utf-8')
     update = telebot.types.Update.de_json(json_string)
     bot.process_new_updates([update])
-    return "!", 200
+    return '', 200
 
-@server.route("/")
-def webhook():
+if __name__ == '__main__':
     bot.remove_webhook()
-    bot.set_webhook(url=f"https://chinaparts38bot.onrender.com/{TOKEN}")
-    return "Webhook set", 200
-
-if __name__ == "__main__":
-    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+    bot.set_webhook(url='https://chinaparts38bot.onrender.com/')
+    app.run(host='0.0.0.0', port=10000)
