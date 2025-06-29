@@ -1,22 +1,41 @@
-import telebot from telebot import types
+import telebot
+from telebot import types
 
-API_TOKEN = '8042972723:AAF0xgS5ln1dyKQyQ2BrVLWpAcjGjBOZUWI' ADMIN_ID = 1015179786
+TOKEN = '8042972723:AAF0xgS5ln1dyKQyQ2BrVLWpAcjGjBOZUWI'
+bot = telebot.TeleBot(TOKEN)
 
-bot = telebot.TeleBot(API_TOKEN)
+# Стартовое сообщение с кнопками
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    item1 = types.KeyboardButton("🔍 Подобрать запчасть")
+    markup.add(item1)
+    bot.send_message(
+        message.chat.id,
+        "Здравствуйте! 👋\n\nОтправьте, пожалуйста, VIN-номер или артикул детали, и я помогу подобрать запчасти.",
+        reply_markup=markup
+    )
 
-Показывать кнопки при любом новом сообщении в начале
+# Обработка текстовых сообщений
+@bot.message_handler(func=lambda message: True)
+def handle_message(message):
+    chat_id = message.chat.id
+    user_text = message.text
 
-@bot.message_handler(func=lambda message: True, content_types=['text']) def handle_all_messages(message): markup = types.ReplyKeyboardMarkup(resize_keyboard=True) item1 = types.KeyboardButton("🛠 Подбор запчасти") markup.add(item1)
+    if user_text == "🔍 Подобрать запчасть":
+        bot.send_message(chat_id, "Пожалуйста, пришлите VIN-номер автомобиля или артикул детали.")
+    else:
+        response = (
+            f"Спасибо, Вы отправили: {user_text}\n\n"
+            "Ваш запрос принят. В ближайшее время мы подберём подходящие запчасти и свяжемся с Вами."
+        )
+        bot.send_message(chat_id, response)
 
-if message.text == "🛠 Подбор запчасти":
-    bot.send_message(message.chat.id, "Пожалуйста, отправьте VIN или артикул детали.", reply_markup=markup)
-else:
-    bot.send_message(message.chat.id, "Ваш запрос отправлен. Ожидайте ответа оператора.", reply_markup=markup)
-    bot.forward_message(ADMIN_ID, message.chat.id, message.message_id)
+        # Сообщение оператору
+        operator_id = 1015179786  # Ваш Telegram ID
+        bot.send_message(
+            operator_id,
+            f"📩 Новый запрос от пользователя @{message.from_user.username or 'Без ника'} (ID: {chat_id}):\n{user_text}"
+        )
 
-Ответ оператора по ID пользователя
-
-@bot.message_handler(commands=['ответ']) def reply_to_user(message): try: parts = message.text.split(maxsplit=2) user_id = int(parts[1]) reply_text = parts[2] bot.send_message(user_id, f"Ответ от оператора:\n{reply_text}") bot.reply_to(message, "Сообщение отправлено.") except: bot.reply_to(message, "Формат команды: /ответ <user_id> <сообщение>")
-
-bot.polling(none_stop=True)
-
+bot.infinity_polling()
