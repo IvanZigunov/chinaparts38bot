@@ -1,27 +1,22 @@
-import telebot
-from flask import Flask, request
+import telebot from telebot import types
 
-API_TOKEN = '8042972723:AAF0xgS5ln1dyKQyQ2BrVLWpAcjGjBOZUWI'
+API_TOKEN = '8042972723:AAF0xgS5ln1dyKQyQ2BrVLWpAcjGjBOZUWI' ADMIN_ID = 1015179786
 
 bot = telebot.TeleBot(API_TOKEN)
-app = Flask(__name__)
 
-@bot.message_handler(commands=['start'])
-def handle_start(message):
-    bot.send_message(message.chat.id, "Здравствуйте! Отправьте VIN или артикул, и я подберу автозапчасти.")
+Показывать кнопки при любом новом сообщении в начале
 
-@bot.message_handler(func=lambda message: True)
-def handle_text(message):
-    bot.send_message(message.chat.id, f"Вы ввели: {message.text}. Подбор скоро будет доступен!")
+@bot.message_handler(func=lambda message: True, content_types=['text']) def handle_all_messages(message): markup = types.ReplyKeyboardMarkup(resize_keyboard=True) item1 = types.KeyboardButton("🛠 Подбор запчасти") markup.add(item1)
 
-@app.route('/', methods=['POST'])
-def webhook():
-    json_string = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return '', 200
+if message.text == "🛠 Подбор запчасти":
+    bot.send_message(message.chat.id, "Пожалуйста, отправьте VIN или артикул детали.", reply_markup=markup)
+else:
+    bot.send_message(message.chat.id, "Ваш запрос отправлен. Ожидайте ответа оператора.", reply_markup=markup)
+    bot.forward_message(ADMIN_ID, message.chat.id, message.message_id)
 
-if __name__ == '__main__':
-    bot.remove_webhook()
-    bot.set_webhook(url='https://chinaparts38bot.onrender.com/')
-    app.run(host='0.0.0.0', port=10000)
+Ответ оператора по ID пользователя
+
+@bot.message_handler(commands=['ответ']) def reply_to_user(message): try: parts = message.text.split(maxsplit=2) user_id = int(parts[1]) reply_text = parts[2] bot.send_message(user_id, f"Ответ от оператора:\n{reply_text}") bot.reply_to(message, "Сообщение отправлено.") except: bot.reply_to(message, "Формат команды: /ответ <user_id> <сообщение>")
+
+bot.polling(none_stop=True)
+
