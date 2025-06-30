@@ -4,6 +4,9 @@ from telebot import types
 TOKEN = '8042972723:AAF0xgS5ln1dyKQyQ2BrVLWpAcjGjBOZUWI'
 bot = telebot.TeleBot(TOKEN)
 
+# Удаление webhook перед polling
+bot.remove_webhook()
+
 # Стартовое сообщение с кнопкой
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -35,7 +38,7 @@ def handle_message(message):
         bot.send_message(chat_id, response)
 
         # Отправка сообщения оператору
-        operator_id = 1015179786  # Ваш Telegram ID
+        operator_id = 1015179786
         bot.send_message(
             operator_id,
             f"📩 Новый запрос от пользователя @{message.from_user.username or 'без username'}:\n\n{user_text}"
